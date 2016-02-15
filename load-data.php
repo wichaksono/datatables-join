@@ -10,6 +10,8 @@ if ($database->connect_error) {
 }
 
 // Alternative SQL join in Datatables
+$id_table = 'id_karyawan';
+
 $columns = array(
              'first_name',
              'last_name',
@@ -17,11 +19,13 @@ $columns = array(
              'office',
              'start_date'
            );
+
 // gunakan join disini
 $from = 'karyawan K INNER JOIN position P ON K.position = P.id_position';
 
+$id_table = $id_table != '' ? $id_table . ',' : '';
 // custom SQL
-$sql = "SELECT ".implode(',', $columns)." FROM {$from}";
+$sql = "SELECT {$id_table} ".implode(',', $columns)." FROM {$from}";
 
 // search
 if (isset($_GET['search']['value']) && $_GET['search']['value'] != '') {
@@ -43,13 +47,14 @@ if (isset($_GET['search']['value']) && $_GET['search']['value'] != '') {
 
 //SORT Kolom
 $sortColumn = isset($_GET['order'][0]['column']) ? $_GET['order'][0]['column'] : 0;
-$sortColumn = $columns[$sortColumn];
 $sortDir    = isset($_GET['order'][0]['dir']) ? $_GET['order'][0]['dir'] : 'asc';
+
+$sortColumn = $columns[$sortColumn];
 
 $sql .= " ORDER BY {$sortColumn} {$sortDir}";
 
-$count = $database->query($sql);
 // var_dump($sql);
+$count = $database->query($sql);
 // hitung semua data
 $totaldata = $count->num_rows;
 
@@ -71,13 +76,16 @@ $datatable['recordsFiltered'] = $totaldata;
 $datatable['data']            = array();
 
 while ($row = $data->fetch_assoc()) {
-    $datatable['data'][] = array(
-                             $row['first_name'],
-                             $row['last_name'],
-                             $row['position_name'],
-                             $row['office'],
-                             $row['start_date']
-                         );
+
+    $fields = array();
+    for ($i=0; $i < count($columns); $i++) {
+        # code...
+        $fields[] = $row["{$columns[$i]}"];
+    }
+    
+
+    $datatable['data'][] = $fields;
 }
+
 $data->close();
 echo json_encode($datatable);
